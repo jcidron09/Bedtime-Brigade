@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, render_template, request, session
+from flask import Flask, redirect, url_for, render_template, request, session, flash, send_from_directory
 from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -68,14 +68,15 @@ def create_user():
                     return render_template("create_user.html", content="Username is Taken")
             db.session.add(User(username=username, password=password))
             db.session.commit()
+            return redirect(url_for("login"))
     else:
-        return render_template("create_user.html", content="")
+        return render_template("create_user.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if "username" in session.keys():
-        return redirect(url_for("profile_screen", username=session["username"]))
+    if "user" in session.keys():
+        return redirect(url_for("profile_screen", username=session["user"]))
     if request.method == 'POST':
         username = request.form["username"]
         password = request.form["password"]
@@ -83,8 +84,7 @@ def login():
             test_user = user.username
             test_password = user.password
             if username == test_user and password == test_password:
-                session["username"] = username
-                session["password"] = password
+                session["user"] = username
                 return redirect(url_for("profile_screen", username=username))
         return "invalid password"
     return render_template("login.html")
@@ -100,20 +100,28 @@ def return_database():
     return render_template("show_database.html", content=create_table())
 
 
-@app.route("/profile/<username>")
+@app.route("/profile/<username>", methods=["GET","POST"])
 def profile_screen(username):
-    if "username" not in session.keys():
+    if request.method == "POST":
+        session.pop("user", None)
         return redirect(url_for("login"))
     else:
-        if username == "default":
-            return redirect(url_for("profile_screen", username=session["username"]))
-    print(User.query.filter_by(username='jooshua').first())
+        if "user" not in session.keys():
+            return redirect(url_for("login"))
+        else:
+            if username == "default":
+                return redirect(url_for("login"))
     return render_template("profile.html", username=username)
 
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/uploads/<name>')
+def download_file(name):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], name)
 
 
 @app.route("/archives", methods=['GET', 'POST'])
@@ -133,15 +141,8 @@ def archives():
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             return redirect(url_for('download_file', name=filename))
-    return '''
-        <!doctype html>
-        <title>Upload new File</title>
-        <h1>Upload new File</h1>
-        <form method=post enctype=multipart/form-data>
-          <input type=file name=file>
-          <input type=submit value=Upload>
-        </form>
-        '''
+    return render_template("archives.html")
+
 
 def create_table():
     table = """
@@ -173,4 +174,4 @@ def create_table():
 
 if __name__ == "__main__":
     db.create_all()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)

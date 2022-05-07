@@ -6,10 +6,13 @@
 </head>
 <body>
         {% extends "base.html" %}
-        {% block title %}Home Page{% endblock %}
+        {% block title %}{{username}}{% endblock %}
         {% block content %}
         <figure class="text-center">
             <h1>{{username}}</h1>
+        <form method='POST' action="/profile/default">
+            <input type="submit" class="btn btn-danger" value="Logout">
+        </form>
         </figure>
         {% endblock %}
 </body>
