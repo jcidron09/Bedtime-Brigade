@@ -1,11 +1,17 @@
 from flask import Flask, redirect, url_for, render_template, request, session
 from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
 import random
 import os
 import re
 
+
 app = Flask(__name__)
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 app.secret_key = "hello"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Posts-Users.sqlite3'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -19,13 +25,17 @@ db = SQLAlchemy(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(40))
+    alias = db.Column(db.String(20))
     password = db.Column(db.String(16))
+    admin = db.Column(db.Boolean)
     posts = db.relationship('Post', backref='user')
 
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     image = db.Column(db.String(1000))
+    date = db.Column(db.String(20))
+    timestamp = db.Column(db.String(20))
     poster_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
@@ -53,13 +63,11 @@ def create_user():
         if password != confirmed_password:
             return render_template("create_user.html", content="Invalid!")
         else:
+            for user in User.query.all():
+                if username == user.username:
+                    return render_template("create_user.html", content="Username is Taken")
             db.session.add(User(username=username, password=password))
             db.session.commit()
-        for user in User.query.all():
-            content += user.username
-            content += ""
-            content += user.password
-            return content
     else:
         return render_template("create_user.html", content="")
 
@@ -79,7 +87,6 @@ def login():
                 session["password"] = password
                 return redirect(url_for("profile_screen", username=username))
         return "invalid password"
-
     return render_template("login.html")
 
 
@@ -100,8 +107,41 @@ def profile_screen(username):
     else:
         if username == "default":
             return redirect(url_for("profile_screen", username=session["username"]))
+    print(User.query.filter_by(username='jooshua').first())
     return render_template("profile.html", username=username)
 
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/archives", methods=['GET', 'POST'])
+def archives():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('download_file', name=filename))
+    return '''
+        <!doctype html>
+        <title>Upload new File</title>
+        <h1>Upload new File</h1>
+        <form method=post enctype=multipart/form-data>
+          <input type=file name=file>
+          <input type=submit value=Upload>
+        </form>
+        '''
 
 def create_table():
     table = """

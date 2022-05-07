@@ -8,17 +8,18 @@
         {% block content %}
         <div class="container align-content-center text-center">
             <h1>The Bedtime Brigade</h1>
-            <h2>Login</h2>
-            <h3>{{content}}</h3>
-            <form method='POST' action="/login">
-            <h2>Username</h2>
-              <input type="text" name="username" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1"/>
-                <h2>Password</h2>
-              <input type="text" name="password" class="form-control" placeholder="Password" aria-label="Password" aria-describedby="basic-addon1"/>
-                <h2>Login</h2>
-          <input type="submit" class="btn btn-success" value="Submit">
-        </form>
+            <h3>Login</h3>
+            <h4>{{content}}</h4>
         </div>
+
+        <form method='POST' action="/login">
+                <h3>Username</h3>
+              <input type="text" name="username" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1"/>
+                <h3>Password</h3>
+              <input type="text" name="password" class="form-control" placeholder="Password" aria-label="Password" aria-describedby="basic-addon1"/>
+            <br>
+          <input type="submit" class="btn btn-success" value="Login">
+        </form>
         {% endblock %}
     </body>
 

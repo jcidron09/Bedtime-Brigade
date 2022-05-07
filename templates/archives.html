@@ -2,9 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Archives</title>
 </head>
-<body>
-
-</body>
+    <body>
+        {% extends "base.html" %}
+        {% block title %}Home Page{% endblock %}
+        {% block content %}
+        <form action="/archives" method="post" enctype="multipart/form-data">
+          Select image to upload:
+          <input type="file" name="fileToUpload" id="fileToUpload">
+          <input type="submit" value="Upload Image" name="submit">
+        </form>
+        {{content}}
+        {% endblock%}
+    </body>
 </html>
