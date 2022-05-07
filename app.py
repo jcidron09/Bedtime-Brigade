@@ -58,6 +58,7 @@ def create_user():
     content = ""
     if request.method == 'POST':
         username = request.form["username"]
+        alias = request.form["alias"]
         password = request.form["password"]
         confirmed_password = request.form["confirmed_password"]
         if password != confirmed_password:
@@ -66,7 +67,7 @@ def create_user():
             for user in User.query.all():
                 if username == user.username:
                     return render_template("create_user.html", content="Username is Taken")
-            db.session.add(User(username=username, password=password))
+            db.session.add(User(username=username, alias=alias, password=password, admin=False))
             db.session.commit()
             return redirect(url_for("login"))
     else:
@@ -151,6 +152,7 @@ def create_table():
             <tr>
               <th scope="col">Id</th>
               <th scope="col">Username</th>
+              <th scope="col">Alias</th>
               <th scope="col">Password</th>
               <th scope="col">Delete</th>
             </tr>
@@ -160,8 +162,9 @@ def create_table():
     for user in User.query.all():
         table += "<tr>\n" \
             + "<th scope=""row"">" + str(user.id) + "</td>\n" \
-            + "<td>" + user.username + "</td>\n" + "<td>" \
-            + user.password + "</td>\n" \
+            + "<td>" + user.username + "</td>\n" \
+            + "<td>" + user.alias + "</td\n>" \
+            + "<td>" + user.password + "</td>\n" \
             + "<td>" + "<div class=""form-check"">\n" \
             + "<input class=""form-check-input"" type=""checkbox"" value=""all""  name= " \
             + "\"" + str(user.username) + "\"" + ">" \
