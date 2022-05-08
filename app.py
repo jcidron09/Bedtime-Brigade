@@ -86,6 +86,7 @@ def login():
             test_password = user.password
             if username == test_user and password == test_password:
                 session["user"] = username
+                session["alias"] = user.alias
                 return redirect(url_for("profile_screen", username=username))
         return "invalid password"
     return render_template("login.html")
@@ -101,8 +102,19 @@ def return_database():
     return render_template("show_database.html", content=create_table())
 
 
-@app.route("/profile/<username>", methods=["GET","POST"])
+@app.route("/profile/<username>", methods=["GET", "POST"])
 def profile_screen(username):
+    # if request.method == "POST":
+    #    session.pop("user", None)
+    #    return redirect(url_for("login"))
+    # else:
+    #    if "user" not in session.keys():
+    #        return redirect(url_for("login"))
+    #    else:
+    #        if username == "default":
+    #            return redirect(url_for("login"))
+    username = ""
+    alias = ""
     if request.method == "POST":
         session.pop("user", None)
         return redirect(url_for("login"))
@@ -110,9 +122,15 @@ def profile_screen(username):
         if "user" not in session.keys():
             return redirect(url_for("login"))
         else:
-            if username == "default":
-                return redirect(url_for("login"))
-    return render_template("profile.html", username=username)
+            for user in User.query.all():
+                if user.username == session["user"]:
+                    username = session["user"]
+                    alias = session["alias"]
+                    # session.query(user). \
+                    # filter(user.username == username). \
+                    # update({'is': True})
+                    # session.commit()
+                    return render_template("profile.html", alias=alias, username=username)
 
 
 def allowed_file(filename):
@@ -141,9 +159,26 @@ def archives():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('download_file', name=filename))
-    return render_template("archives.html")
+    return render_template("archives.html", gallery=create_gallery("Archives"))
 
+
+def create_gallery(directory):
+    gallery = "\t\t\t<div class=\"row\">\n"
+    file_list = os.listdir("static/Archives")
+    for file in file_list:
+        if re.search("(([^.]+)$)", file).group() not in "jpgjpegpnggifhiec":
+            file_list.remove(file)
+    for image in file_list:
+        gallery += "\t\t\t\t<div class=\"col-lg-4 mb-4 mb-lg-0\">\n"
+        gallery += "\t\t\t\t\t<img\n"
+        gallery += "\t\t\t\t\t\tsrc=\"static/" + directory + "/" + image + "\"\n"
+        gallery += "\t\t\t\t\t\tclass=\"w-100 shadow-1-strong rounded mb-4\"\n"
+        gallery += "\t\t\t\t\t\twidth=\"25%\"\n"
+        gallery += "\t\t\t\t\t/>\n"
+        gallery += "\t\t\t\t</div>\n"
+    gallery += "\t\t\t</div>"
+    print(gallery)
+    return gallery
 
 def create_table():
     table = """
@@ -172,6 +207,7 @@ def create_table():
             + "</label>\n</div>\n</td>\n"
         row += 1
     table += "</tbody>\n</table>\n"
+    print(table)
     return table
 
 
