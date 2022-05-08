@@ -97,15 +97,16 @@ def show_database():
     if request.method == 'POST':
         for user in User.query.all():
             username = user.username
-            if 'delete_user' in request.form.getlist(user.username):
-                db.session.delete(user)
-                db.session.commit()
-            if 'make_admin' in request.form.getlist(user.username):
-                db.session.query(User).filter(user.username == username).update({'admin': True})
-                db.session.commit()
-            if 'remove_admin' in request.form.getlist(user.username):
-                db.session.query(User).filter(user.username == username).update({'admin': False})
-                db.session.commit()
+            for tag in request.form.getlist(user.username):
+                if 'delete_user' in request.form.getlist(user.username):
+                    db.session.delete(user)
+                if 'make_admin' in request.form.getlist(user.username):
+                    current_user = User.query.filter_by(username=username).first()
+                    current_user.admin = True
+                if 'remove_admin' in request.form.getlist(user.username):
+                    current_user = User.query.filter_by(username=username).first()
+                    current_user.admin = False
+        db.session.commit()
     return render_template("show_database.html", content=create_table())
 
 
