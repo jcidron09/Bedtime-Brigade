@@ -46,7 +46,7 @@ def home():
     os.chdir(os.getcwd() + "/static")
     file_list = os.listdir()
     for file in file_list:
-        if re.search("(([^.]+)$)", file).group() not in "jpgjpeg":
+        if re.search("(([^.]+)$)", file).group() not in "txtpngjpgjpeggif'":
             file_list.remove(file)
     image = random.choice(file_list)
     os.chdir(os.getcwd()[:os.getcwd().index("/static")])
@@ -93,26 +93,24 @@ def login():
 
 
 @app.route("/database", methods=["POST", "GET"])
-def return_database():
+def show_database():
     if request.method == 'POST':
         for user in User.query.all():
-            if 'all' in request.form.getlist(user.username):
+            username = user.username
+            if 'delete_user' in request.form.getlist(user.username):
                 db.session.delete(user)
+                db.session.commit()
+            if 'make_admin' in request.form.getlist(user.username):
+                db.session.query(User).filter(user.username == username).update({'admin': True})
+                db.session.commit()
+            if 'remove_admin' in request.form.getlist(user.username):
+                db.session.query(User).filter(user.username == username).update({'admin': False})
                 db.session.commit()
     return render_template("show_database.html", content=create_table())
 
 
 @app.route("/profile/<username>", methods=["GET", "POST"])
 def profile_screen(username):
-    # if request.method == "POST":
-    #    session.pop("user", None)
-    #    return redirect(url_for("login"))
-    # else:
-    #    if "user" not in session.keys():
-    #        return redirect(url_for("login"))
-    #    else:
-    #        if username == "default":
-    #            return redirect(url_for("login"))
     username = ""
     alias = ""
     if request.method == "POST":
@@ -126,10 +124,6 @@ def profile_screen(username):
                 if user.username == session["user"]:
                     username = session["user"]
                     alias = session["alias"]
-                    # session.query(user). \
-                    # filter(user.username == username). \
-                    # update({'is': True})
-                    # session.commit()
                     return render_template("profile.html", alias=alias, username=username)
 
 
@@ -138,9 +132,9 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/uploads/<name>')
-def download_file(name):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], name)
+# @app.route('/uploads/<name>')
+# def download_file(name):
+#    return send_from_directory(app.config["UPLOAD_FOLDER"], name)
 
 
 @app.route("/archives", methods=['GET', 'POST'])
@@ -177,7 +171,6 @@ def create_gallery(directory):
         gallery += "\t\t\t\t\t/>\n"
         gallery += "\t\t\t\t</div>\n"
     gallery += "\t\t\t</div>"
-    print(gallery)
     return gallery
 
 def create_table():
@@ -189,6 +182,9 @@ def create_table():
               <th scope="col">Username</th>
               <th scope="col">Alias</th>
               <th scope="col">Password</th>
+              <th scope="col">Is Admin</th>
+              <th scope="col">Make Admin</th>
+              <th scope="col">Remove Admin</th>
               <th scope="col">Delete</th>
             </tr>
       </thead>
@@ -200,14 +196,24 @@ def create_table():
             + "<td>" + user.username + "</td>\n" \
             + "<td>" + user.alias + "</td\n>" \
             + "<td>" + user.password + "</td>\n" \
+            + "<td>" + str(user.admin) + "</td>\n" \
             + "<td>" + "<div class=""form-check"">\n" \
-            + "<input class=""form-check-input"" type=""checkbox"" value=""all""  name= " \
+            + "<input class=""form-check-input"" type=""checkbox"" value=""make_admin""  name= " \
+            + "\"" + str(user.username) + "\"" + ">" \
+            + "<label class=""form-check-label"">" + "Make Admin" \
+            + "</label>\n</div>\n</td>\n" \
+            + "<td>" + "<div class=""form-check"">\n" \
+            + "<input class=""form-check-input"" type=""checkbox"" value=""remove_admin""  name= " \
+            + "\"" + str(user.username) + "\"" + ">" \
+            + "<label class=""form-check-label"">" + "Remove Admin" \
+            + "</label>\n</div>\n</td>\n" \
+            + "<td>" + "<div class=""form-check"">\n" \
+            + "<input class=""form-check-input"" type=""checkbox"" value=""delete_user""  name= " \
             + "\"" + str(user.username) + "\"" + ">" \
             + "<label class=""form-check-label"">" + "Delete User" \
             + "</label>\n</div>\n</td>\n"
         row += 1
     table += "</tbody>\n</table>\n"
-    print(table)
     return table
 
 
