@@ -1,5 +1,6 @@
 from flask import Flask, redirect, url_for, render_template, request, session, flash, send_from_directory
-from datetime import timedelta, datetime
+from datetime import timedelta
+import datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import random
@@ -9,8 +10,8 @@ import shutil
 
 
 app = Flask(__name__)
-UPLOAD_FOLDER = "static/uploads"
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+UPLOAD_FOLDER = "static/Archives"
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = "hello"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Posts-Users.sqlite3'
@@ -101,14 +102,20 @@ def profile_screen(username):
         else:
             for user in User.query.all():
                 if user.username == session["user"]:
-                    username = session["user"]
-                    alias = session["alias"]
-                    return render_template("profile.html", alias=alias, username=username)
+                    username = session['user']
+                    alias = session["alias"] 
+                    if user.admin == True:
+                       username = "<h1 class=\"admin username\">" +"(@" + username +")"
+                       alias ="<h1 class=\"admin username\">" + alias + "</h1>"
+                    else:
+                      username = "<h1>" + "(@" + session["user"] +")" + "</h1>" 
+                      alias = "<h1>" + session["alias"] + "</h1>"                      
+                    return render_template("profile.html", title_username=session['user'],alias=alias, username=username, content=user_posts(session['user']))
 
 
 @app.route("/archives", methods=['GET', 'POST'])
 def archives():
-    return render_template("archives.html", gallery=create_gallery("Archives"))
+    return render_template("archives.html", gallery=create_gallery())
 
 
 def allowed_file(filename):
@@ -137,6 +144,9 @@ def create_post():
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                this_post = Post(image=filename, caption=request.form['caption'], date=datetime.datetime.now().strftime("%x"), timestamp=datetime.datetime.now().strftime("%X"), poster=session['user'])
+                db.session.add(this_post)
+                db.session.commit()
                 return render_template("create_post.html", content="POST")
         if request.method == 'GET':
             return render_template("create_post.html", content="GET")
@@ -155,23 +165,36 @@ def show_database():
             if 'remove_admin' in request.form.getlist(user.username):
                 current_user = User.query.filter_by(username=username).first()
                 current_user.admin = False
+        for post in Post.query.all():
+            if 'delete_post' in request.form.getlist(post.timestamp):
+              db.session.delete(post)
         db.session.commit()
-    return render_template("show_database.html", user_table=create_user_table(), post_table=create_post_table())
+    else:
+      if 'user' not in session.keys():
+        return redirect(url_for("login"))
+      else:
+        username = session['user']
+        current_user = User.query.filter_by(username=username).first()
+        if current_user.admin == False:
+          return redirect(url_for("login"))
+        else:
+          return render_template("show_database.html", user_table=create_user_table(), post_table=create_post_table())
+    return render_template("show_database.html",user_table=create_user_table(), post_table=create_post_table())
 
 
-def create_gallery(directory):
+
+def create_gallery():
     gallery = "\t\t\t<div class=\"row\">\n"
-    file_list = os.listdir("static/Archives")
-    for file in file_list:
-        if re.search("(([^.]+)$)", file).group() not in "jpg jpeg png gif heic":
-            file_list.remove(file)
-    for image in file_list:
+    for post in Post.query.all():
         gallery += "\t\t\t\t<div class=\"col-lg-4 mb-4 mb-lg-0\">\n"
         gallery += "\t\t\t\t\t<img\n"
-        gallery += "\t\t\t\t\t\tsrc=\"static/" + directory + "/" + image + "\"\n"
+        gallery += "\t\t\t\t\t\tsrc=\"static/" + "Archives/" + post.image + "\"\n"
+        print(post.image)
         gallery += "\t\t\t\t\t\tclass=\"w-100 shadow-1-strong rounded mb-4\"\n"
         gallery += "\t\t\t\t\t\twidth=\"25%\"\n"
         gallery += "\t\t\t\t\t/>\n"
+        gallery += "\t\t\t\t\t<h6>" + post.poster + "</h6>"
+        gallery += "\t\t\t\t\t<p>" + post.caption + "</p>"
         gallery += "\t\t\t\t</div>\n"
     gallery += "\t\t\t</div>"
     return gallery
@@ -228,9 +251,9 @@ def create_post_table():
             <tr>
               <th scope="col">Id</th>
               <th scope="col">Image</th>
+              <th scope="col">Caption</th>
               <th scope="col">Date</th>
               <th scope="col">Timestamp</th>
-              <th scope="col">Event</th>
               <th scope="col">Poster</th>
             </tr>
         </thead>
@@ -240,13 +263,51 @@ def create_post_table():
             + "<th scope=""row"">" + str(post.id) + "</td>\n" \
             + "<td>" + post.image + "</td>\n" \
             + "<td>" + post.date + "</td\n>" \
+            + "<td>" + post.caption + "</td\n>" \
             + "<td>" + post.timestamp + "</td>\n" \
-            + "<td>" + post.event + "</td>\n" \
-            + "<td>" + post.poster_id + "</td>\n"
+            + "<td>" + post.poster + "</td>\n" \
+            + "<td>" + "<div class=""form-check"">\n" \
+            + "<input class=""form-check-input"" type=""checkbox"" value=""delete_post""  name= " \
+            + "\"" + str(post.timestamp) + "\"" + ">" \
+            + "<label class=""form-check-label"">" + "Delete POST" \
+            + "</label>\n</div>\n</td>\n"
+      
     table += "</tbody>\n</table>\n"
     return table
 
+def user_posts(username):
+  posts = "Posts: "
+  for post in Post.query.all():
+    for user in User.query.filter_by(username=username):
+      table = """
+    <table class="table">
+        <thead>
+            <tr>
+              <th scope="col">Id</th>
+              <th scope="col">Image</th>
+              <th scope="col">Date</th>
+              <th scope="col">Caption</th>
+              <th scope="col">Timestamp</th>
+              <th scope="col">Poster</th>
+            </tr>
+        </thead>
+    """
+    for post in Post.query.all():
+      if post.poster == username:
+        table += "<tr>\n" \
+            + "<th scope=""row"">" + str(post.id) + "</td>\n" \
+            + "\t\t<td>" + post.image + "</td>\n" \
+            + "\t\t<td>" + post.date + "</td\n>" \
+            + "\t\t<td>" + post.caption + "</td\n>" \
+            + "\t\t<td>" + post.timestamp + "</td>\n" \
+            + "\t\t<td>" + post.poster + "</td>\n"
+    table += "</tbody>\n</table>\n"
+    return table
+  
+  return posts
 
+  
 if __name__ == "__main__":
     db.create_all()
+    print(user_posts("Jooshua"))
     app.run(host="0.0.0.0", debug=True)

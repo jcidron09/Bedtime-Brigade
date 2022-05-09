@@ -6,14 +6,22 @@
 </head>
 <body>
         {% extends "base.html" %}
-        {% block title %}{{username}}{% endblock %}
+        {% block title %}{{title_username}}{% endblock %}
         {% block content %}
+        {%autoescape false%}
         <figure class="text-center">
-            <h1>{{alias}}(@{{username}})</h1>
+            {{alias}}{{username}}
+        </figure>
+        {%endautoescape%}
+        <div class= "container">
+        {%autoescape false%}
+          {{content}}
+        {%endautoescape%}
+        <div>
         <form method='POST' action="/profile/default">
             <input type="submit" class="btn btn-danger" value="Logout">
         </form>
-        </figure>
+        
         {% endblock %}
 </body>
 </html>
