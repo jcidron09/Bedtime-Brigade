@@ -42,3 +42,5 @@
         <input type=submit value=Upload>
     </form>
 </div>
+
+# db.session.query(User).filter(user.username == username).update({'admin': True})

@@ -10,7 +10,8 @@
         <h1>Users</h1>
         <form method='POST' action="/database">
             {% autoescape false %}
-                {{content}}
+                {{user_table}}
+                {{post_table}}
             {% endautoescape %}
             <div class="container align-content-center align-text-center" >
                 <input class="btn btn-outline-danger" type="submit" name="Submit">
