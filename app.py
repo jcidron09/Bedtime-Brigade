@@ -195,6 +195,7 @@ def create_gallery():
         gallery += "\t\t\t\t\t/>\n"
         gallery += "\t\t\t\t\t<h6>" + post.poster + "</h6>"
         gallery += "\t\t\t\t\t<p>" + post.caption + "</p>"
+        gallery += "\t\t\t\t\t<p>" + post.date + "</p>"
         gallery += "\t\t\t\t</div>\n"
     gallery += "\t\t\t</div>"
     return gallery
@@ -255,6 +256,7 @@ def create_post_table():
               <th scope="col">Date</th>
               <th scope="col">Timestamp</th>
               <th scope="col">Poster</th>
+              <th scope="col">Delete</th>
             </tr>
         </thead>
     """
