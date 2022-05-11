@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+        {% extends "base.html" %}
+        {% block title %}Show Database{% endblock %}
+        {% block content %}
+        <h1>Users</h1>
+        <form method='POST' action="/database">
+            {% autoescape false %}
+                {{user_table}}
+                {{post_table}}
+            {% endautoescape %}
+            <div class="container align-content-center align-text-center" >
+                <input class="btn btn-outline-danger" type="submit" name="Submit">
+            </div>
+        </form>
+        {% endblock %}
+</body>
+</html>

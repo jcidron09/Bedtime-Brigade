@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   </head>
+    <body>
+        {% extends "base.html" %}
+        {% block title %}Home Page{% endblock %}
+        {% block content %}
+        <div class="container align-content-center text-center">
+          <br>
+          <br> 
+          <h1>The Bedtime Brigade</h1>
+          <br>
+          <br>
+            <img class="img_fluid rounded" src="{{url_for('static', filename=image)}}", width="25%" height="25%"/>
+        </div>
+        {% endblock %}
+    </body>
+
+</html>
