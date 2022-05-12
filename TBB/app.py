@@ -1,5 +1,6 @@
 from flask import Flask, redirect, url_for, render_template, request, session, flash, send_from_directory
 from datetime import timedelta
+from flask_migrate import Migrate
 import datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -14,32 +15,41 @@ UPLOAD_FOLDER = "static/Archives"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = "hello"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Posts-Users.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Posts-Users-Comments.sqlite3'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SESSION_PERMANENT"] = False
 app.permanent_session_lifetime = timedelta(minutes=5)
 app.config["SESSION_TYPE"] = "filesystem"
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(40))
-    alias = db.Column(db.String(20))
-    password = db.Column(db.String(16))
-    admin = db.Column(db.Boolean)
-    posts = db.relationship('Post', backref='user')
-
+  id = db.Column(db.Integer, primary_key=True)
+  username = db.Column(db.String(40))
+  alias = db.Column(db.String(20))
+  password = db.Column(db.String(16))
+  admin = db.Column(db.Boolean)
+  posts = db.relationship('Post', backref='user')
 
 class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    image = db.Column(db.String(1000))
-    caption = db.Column(db.String(255))
-    date = db.Column(db.String(20))
-    timestamp = db.Column(db.String(20))
-    poster = db.Column(db.Integer, db.ForeignKey('user.id'))
+  id = db.Column(db.Integer, primary_key=True)
+  image = db.Column(db.String(1000))
+  caption = db.Column(db.String(255))
+  date = db.Column(db.String(20))
+  timestamp = db.Column(db.String(20))
+  poster = db.Column(db.Integer, db.ForeignKey('user.id'))
+  comments = db.relationship('Comment', backref='post')
 
+class Comment(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  content = db.Column(db.String(1000))
+  date = db.Column(db.String(20))
+  timestamp = db.Column(db.String(20))
+  origin_post = db.Column(db.Integer, db.ForeignKey('post.id'))
+  commenter = db.Column(db.Integer, db.ForeignKey('user.id'))
+  
 
 @app.route("/")
 def home():
@@ -195,7 +205,7 @@ def create_gallery():
         gallery += "\t\t\t\t\t\tclass=\"w-100 shadow-1-strong rounded mb-4\"\n"
         gallery += "\t\t\t\t\t\twidth=\"25%\"\n"
         gallery += "\t\t\t\t\t/>\n"
-        gallery += "\t\t\t\t\t<h6>" + post.poster + "</h6>"
+        gallery += "\t\t\t\t\t<h6>"  + post.poster + "</h6>"
         gallery += "\t\t\t\t\t<p>" + post.caption + "</p>"
         gallery += "\t\t\t\t\t<p>" + post.date + "</p>"
         gallery += "\t\t\t\t</div>\n"
@@ -313,5 +323,4 @@ def user_posts(username):
   
 if __name__ == "__main__":
     db.create_all()
-    print(user_posts("Jooshua"))
     app.run(host="0.0.0.0", debug=True)
