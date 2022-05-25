@@ -28,7 +28,16 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install Flask==2.0.1
+          pip install Flask-SQLAlchemy==2.5.1
+          pip install DateTime==4.4
+          pip intsall numpy==1.21.2
+          pip install Pillow==8.3.2
+          pip install regex==2021.8.28
+          pip install requests==2.26.0
+          pip install SQLAlchemy==1.4.23
+          pip install Werkzeug==2.0.1
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       
