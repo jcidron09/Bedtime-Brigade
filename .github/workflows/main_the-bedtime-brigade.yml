@@ -32,7 +32,7 @@ jobs:
            pip install Flask
            pip install Flask-SQLAlchemy
            pip install DateTime
-           pip intsall numpy
+           pip install numpy
            pip install Pillow
            pip install regex
            pip install requests
